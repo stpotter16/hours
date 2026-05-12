@@ -51,7 +51,10 @@ func run(
 		return err
 	}
 
-	authenticator := authentication.New(store)
+	authenticator, err := authentication.New(getenv)
+	if err != nil {
+		return err
+	}
 
 	handler := handlers.NewServer(store, sessionManager, authenticator)
 	port := getenv("PORT")
