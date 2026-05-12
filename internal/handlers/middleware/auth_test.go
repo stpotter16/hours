@@ -81,22 +81,3 @@ func TestApiAuthMiddleware_InvalidCookie_Returns401(t *testing.T) {
 		t.Errorf("expected status 401, got %d", rec.Code)
 	}
 }
-
-func TestViewAuthMiddleware_NoCookie_RedirectsToLogin(t *testing.T) {
-	sm := newTestSessionManager(t)
-	handler := middleware.NewViewAuthenticationRequiredMiddleware(sm)(okHandler())
-
-	req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
-	rec := httptest.NewRecorder()
-
-	handler.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusTemporaryRedirect {
-		t.Errorf("expected status 307, got %d", rec.Code)
-	}
-
-	location := rec.Header().Get("Location")
-	if location != "/login" {
-		t.Errorf("expected redirect to /login, got %q", location)
-	}
-}
