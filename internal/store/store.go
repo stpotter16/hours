@@ -7,7 +7,7 @@ import (
 )
 
 type Store interface {
-	// Clicks
-	GetClicks(ctx context.Context) ([]types.Click, error)
-	CreateClick(ctx context.Context) (int, error)
+	// Projects
+	GetProjects(ctx context.Context) ([]types.Project, error)
+	CreateProject(ctx context.Context) (int, error)
 }

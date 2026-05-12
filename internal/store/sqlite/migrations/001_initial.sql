@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS session (
     expires_at TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS clicks (
+CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY,
-    created_time TEXT NOT NULL
+    name TEXT NOT NULL,
+    created_time TEXT NOT NULL,
+    last_modified_time TEXT NOT NULL
 ) STRICT;
