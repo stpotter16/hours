@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/stpotter16/go-template/internal/types"
+	"github.com/stpotter16/hours/internal/types"
 )
 
 var ErrUserNotFound = errors.New("user not found")

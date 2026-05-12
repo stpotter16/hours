@@ -3,7 +3,7 @@ package sqlite
 import (
 	"time"
 
-	"github.com/stpotter16/go-template/internal/store/db"
+	"github.com/stpotter16/hours/internal/store/db"
 )
 
 const (

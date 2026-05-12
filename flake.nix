@@ -1,5 +1,5 @@
 {
-    description = "Dev environment for Go-Template";
+    description = "Dev environment for Hours";
 
     inputs = {
       flake-utils.url = "github:numtide/flake-utils";
@@ -43,7 +43,7 @@
         nodejs = nodejs-nixpkgs.legacyPackages.${system}.nodejs_24;
       in {
         packages.default = gopkg.buildGoModule {
-          pname = "go-template";
+          pname = "hours";
           version = "0.1.0";
           src = ./.;
           vendorHash = "";

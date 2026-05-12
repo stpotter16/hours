@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/stpotter16/go-template/internal/handlers/middleware"
-	"github.com/stpotter16/go-template/internal/handlers/sessions"
-	"github.com/stpotter16/go-template/internal/store"
-	"github.com/stpotter16/go-template/internal/types"
+	"github.com/stpotter16/hours/internal/handlers/middleware"
+	"github.com/stpotter16/hours/internal/handlers/sessions"
+	"github.com/stpotter16/hours/internal/store"
+	"github.com/stpotter16/hours/internal/types"
 )
 
 type viewProps struct {

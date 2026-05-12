@@ -8,7 +8,7 @@ set -u
 
 # Configuration
 TARGET_HOST="${TARGET_HOST:-}"
-SERVICE_LINK="${SERVICE_LINK:-/opt/go-template/server}"
+SERVICE_LINK="${SERVICE_LINK:-/opt/hours/server}"
 TARGET_SYSTEM="${TARGET_SYSTEM:-x86_64-linux}"  # Target architecture
 
 # Colors for output
@@ -23,7 +23,7 @@ if [ -z "$TARGET_HOST" ]; then
     exit 1
 fi
 
-echo -e "${BLUE}==> Building go-template package for $TARGET_SYSTEM...${NC}"
+echo -e "${BLUE}==> Building hours package for $TARGET_SYSTEM...${NC}"
 nix build --system $TARGET_SYSTEM
 
 # Get the store path of the built package
@@ -36,8 +36,8 @@ nix copy --to ssh://$TARGET_HOST ./result
 echo -e "${BLUE}==> Updating symlink on server...${NC}"
 ssh -t $TARGET_HOST "sudo mkdir -p $(dirname $SERVICE_LINK) && sudo ln -sf $STORE_PATH/bin/server $SERVICE_LINK"
 
-echo -e "${BLUE}==> Restarting go-template service...${NC}"
-ssh -t $TARGET_HOST 'sudo systemctl restart go-template'
+echo -e "${BLUE}==> Restarting hours service...${NC}"
+ssh -t $TARGET_HOST 'sudo systemctl restart hours'
 
 echo -e "${GREEN}==> Deployment complete!${NC}"
 echo -e "${GREEN}Server is running: $STORE_PATH/bin/server${NC}"

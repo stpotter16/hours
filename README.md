@@ -1,8 +1,7 @@
-# go-template
+# hours
 
-A starter template for HTML based services built in Go with a Sqlite data layer
+Track hours spent on a project
 
 # How to use
 
-- Change go module name (go-template, Go Template, Go-Template, GO_TEMPLATE)
-- Update README
+TODO

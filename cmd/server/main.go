@@ -11,11 +11,11 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/stpotter16/go-template/internal/handlers"
-	"github.com/stpotter16/go-template/internal/handlers/authentication"
-	"github.com/stpotter16/go-template/internal/handlers/sessions"
-	"github.com/stpotter16/go-template/internal/store/db"
-	"github.com/stpotter16/go-template/internal/store/sqlite"
+	"github.com/stpotter16/hours/internal/handlers"
+	"github.com/stpotter16/hours/internal/handlers/authentication"
+	"github.com/stpotter16/hours/internal/handlers/sessions"
+	"github.com/stpotter16/hours/internal/store/db"
+	"github.com/stpotter16/hours/internal/store/sqlite"
 )
 
 func run(
@@ -30,9 +30,9 @@ func run(
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	dbPath := getenv("GO_TEMPLATE_DB_PATH")
+	dbPath := getenv("HOURS_DB_PATH")
 	if dbPath == "" {
-		return errors.New("GO_TEMPLATE_DB_PATH environment variable not set")
+		return errors.New("HOURS_DB_PATH environment variable not set")
 	}
 
 	log.Printf("Opening database in %v", dbPath)
