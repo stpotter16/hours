@@ -2,6 +2,10 @@ shell:
 	nix develop -c $$SHELL
 
 
+client/build:
+	./dev-scripts/build-client.sh
+
+
 server/build:
 	./dev-scripts/build-server.sh
 
