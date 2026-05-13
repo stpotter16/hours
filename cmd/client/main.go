@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/stpotter16/hours/internal/client"
 	"golang.org/x/term"
 )
 
@@ -24,6 +25,11 @@ func run(
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
+	client, err := client.New(getenv)
+	if err != nil {
+		return err
+	}
+
 	if len(args) < 2 {
 		return errors.New("Invalid number of args")
 	}
@@ -38,7 +44,10 @@ func run(
 			return err
 		}
 		fmt.Println()
-		fmt.Printf("Passphrase is: %s", passphrase)
+		err = client.Login(string(passphrase))
+		if err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}

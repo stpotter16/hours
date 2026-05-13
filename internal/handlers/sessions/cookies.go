@@ -7,7 +7,7 @@ import (
 	"github.com/stpotter16/hours/internal/cookies"
 )
 
-const SESSION_COOKIE = "X-COIN-SESSION"
+const SESSION_COOKIE = "X-HOURS-SESSION"
 const SESSION_COOKIE_TTL = 3600 * 24 * 30
 
 func (s SessionManger) readSessionCookie(r *http.Request) (string, error) {
