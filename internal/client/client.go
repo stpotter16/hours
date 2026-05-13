@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func New(getenv func(string) string) (Client, error) {
 	return Client{baseUrl: u, httpClient: &http.Client{Timeout: 10 * time.Second}}, nil
 }
 
-func (c Client) Login(passphrase string) error {
+func (c Client) Login(ctx context.Context, passphrase string) error {
 	body, err := json.Marshal(types.LoginRequest{Passphrase: passphrase})
 	if err != nil {
 		return err
@@ -69,4 +70,38 @@ func (c Client) Login(passphrase string) error {
 		return fmt.Errorf("Could not create session config directory: %v", err)
 	}
 	return os.WriteFile(filepath.Join(sessionDir, "session"), []byte(session), 0600)
+}
+
+func (c Client) ListProjects(ctx context.Context) (types.ProjectListResponse, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return types.ProjectListResponse{}, fmt.Errorf("Could not find user config directory: %v", err)
+	}
+	sessionDir := filepath.Join(dir, "hours")
+	cookieBytes, err := os.ReadFile(filepath.Join(sessionDir, "session"))
+	if err != nil {
+		return types.ProjectListResponse{}, fmt.Errorf("Could not read session cookie: %v", err)
+	}
+	cookieVal := string(cookieBytes)
+	req, err := http.NewRequestWithContext(ctx, "GET", c.baseUrl.JoinPath("/projects").String(), nil)
+	if err != nil {
+		return types.ProjectListResponse{}, fmt.Errorf("Could not build request: %v", err)
+	}
+	req.AddCookie(&http.Cookie{Name: "X-HOURS-SESSION", Value: cookieVal})
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return types.ProjectListResponse{}, fmt.Errorf("Could not send GET /projects: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return types.ProjectListResponse{}, fmt.Errorf("list projects failed: %s", resp.Status)
+	}
+
+	var result types.ProjectListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return types.ProjectListResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return result, nil
 }

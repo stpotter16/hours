@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/stpotter16/hours/internal/store"
+	"github.com/stpotter16/hours/internal/types"
 )
 
 func postProjects(s store.Store) http.HandlerFunc {
@@ -22,12 +24,16 @@ func postProjects(s store.Store) http.HandlerFunc {
 
 func getProjects(s store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if _, err := s.GetProjects(r.Context()); err != nil {
+		projects, err := s.GetProjects(r.Context())
+		if err != nil {
 			log.Printf("projectGet: %v", err)
 			http.Error(w, "Server issue - try again later", http.StatusInternalServerError)
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(types.ProjectListResponse{Projects: projects}); err != nil {
+			log.Printf("projectGet encode: %v", err)
+		}
 	}
 }

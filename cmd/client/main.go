@@ -44,7 +44,7 @@ func run(
 			return err
 		}
 		fmt.Println()
-		err = client.Login(string(passphrase))
+		err = client.Login(ctx, string(passphrase))
 		if err != nil {
 			return err
 		}
@@ -55,6 +55,11 @@ func run(
 		subCmd := args[2]
 		switch subCmd {
 		case "list":
+			projects, err := client.ListProjects(ctx)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(stdout, "%+v\n", projects)
 		case "create":
 		case "delete":
 		default:
