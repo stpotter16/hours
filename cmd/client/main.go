@@ -48,6 +48,18 @@ func run(
 		if err != nil {
 			return err
 		}
+	case "projects":
+		if len(args) < 3 {
+			return errors.New("Usage: hours projects <list|create|delete>")
+		}
+		subCmd := args[2]
+		switch subCmd {
+		case "list":
+		case "create":
+		case "delete":
+		default:
+			return fmt.Errorf("Invalid subcommand: %s", subCmd)
+		}
 	default:
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}
