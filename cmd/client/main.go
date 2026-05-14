@@ -61,7 +61,24 @@ func run(
 			}
 			fmt.Fprintf(stdout, "%+v\n", projects)
 		case "create":
+			if len(args) < 4 {
+				return errors.New("Usage hours projects create <name>")
+
+			}
+			projectName := args[3]
+			err := client.CreateProject(ctx, projectName)
+			if err != nil {
+				return err
+			}
 		case "delete":
+			if len(args) < 4 {
+				return errors.New("Usage hours projects delete <name>")
+			}
+			projectName := args[3]
+			err := client.DeleteProject(ctx, projectName)
+			if err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("Invalid subcommand: %s", subCmd)
 		}

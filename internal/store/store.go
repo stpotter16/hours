@@ -9,5 +9,6 @@ import (
 type Store interface {
 	// Projects
 	GetProjects(ctx context.Context) ([]types.Project, error)
-	CreateProject(ctx context.Context) (int, error)
+	CreateProject(ctx context.Context, name string) (int, error)
+	DeleteProject(ctx context.Context, name string) error
 }

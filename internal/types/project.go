@@ -12,3 +12,7 @@ type Project struct {
 type ProjectListResponse struct {
 	Projects []Project `json:"projects"`
 }
+
+type ProjectCreateRequest struct {
+	Name string `json:"name"`
+}

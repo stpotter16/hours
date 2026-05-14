@@ -42,12 +42,14 @@ func (s Store) GetProjects(ctx context.Context) ([]types.Project, error) {
 	return projects, nil
 }
 
-func (s Store) CreateProject(ctx context.Context) (int, error) {
+func (s Store) CreateProject(ctx context.Context, name string) (int, error) {
 	now := formatTime(time.Now().UTC())
 	result, err := s.db.Exec(ctx,
 		`INSERT INTO projects
-			(created_time)
-		VALUES ( ? )`,
+			(name, created_time, last_modified_time)
+		VALUES ( ?, ?, ? )`,
+		name,
+		now,
 		now,
 	)
 	if err != nil {
@@ -58,4 +60,15 @@ func (s Store) CreateProject(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	return int(id), nil
+}
+
+func (s Store) DeleteProject(ctx context.Context, name string) error {
+	_, err := s.db.Exec(ctx,
+		`DELETE FROM projects
+		 WHERE name = ?
+		`,
+		name,
+	)
+
+	return err
 }

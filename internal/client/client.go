@@ -105,3 +105,66 @@ func (c Client) ListProjects(ctx context.Context) (types.ProjectListResponse, er
 
 	return result, nil
 }
+
+func (c Client) CreateProject(ctx context.Context, name string) error {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("Could not find user config directory: %v", err)
+	}
+	sessionDir := filepath.Join(dir, "hours")
+	cookieBytes, err := os.ReadFile(filepath.Join(sessionDir, "session"))
+	if err != nil {
+		return fmt.Errorf("Could not read session cookie: %v", err)
+	}
+	cookieVal := string(cookieBytes)
+	body, err := json.Marshal(types.ProjectCreateRequest{Name: name})
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", c.baseUrl.JoinPath("/projects").String(), bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("Could not build request: %v", err)
+	}
+	req.AddCookie(&http.Cookie{Name: "X-HOURS-SESSION", Value: cookieVal})
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not send POST /projects: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("create projects failed: %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (c Client) DeleteProject(ctx context.Context, name string) error {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return fmt.Errorf("Could not find user config directory: %v", err)
+	}
+	sessionDir := filepath.Join(dir, "hours")
+	cookieBytes, err := os.ReadFile(filepath.Join(sessionDir, "session"))
+	if err != nil {
+		return fmt.Errorf("Could not read session cookie: %v", err)
+	}
+	cookieVal := string(cookieBytes)
+	route := fmt.Sprintf("/projects/%s", name)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", c.baseUrl.JoinPath(route).String(), nil)
+	if err != nil {
+		return fmt.Errorf("Could not build request: %v", err)
+	}
+	req.AddCookie(&http.Cookie{Name: "X-HOURS-SESSION", Value: cookieVal})
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not send DELETE /projects: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("delete projects failed: %s", resp.Status)
+	}
+
+	return nil
+}

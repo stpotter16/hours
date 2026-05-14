@@ -22,4 +22,5 @@ func addRoutes(
 	apiAuthRequired := middleware.NewApiAuthenticationRequiredMiddleware(sessionManager)
 	mux.Handle("POST /projects", apiAuthRequired(postProjects(store)))
 	mux.Handle("GET /projects", apiAuthRequired(getProjects(store)))
+	mux.Handle("DELETE /projects/{name}", apiAuthRequired(deleteProjects(store)))
 }
