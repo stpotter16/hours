@@ -8,8 +8,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"text/tabwriter"
 
 	"github.com/stpotter16/hours/internal/client"
+	"github.com/stpotter16/hours/internal/config"
+	"github.com/stpotter16/hours/internal/types"
 	"golang.org/x/term"
 )
 
@@ -25,68 +28,123 @@ func run(
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	client, err := client.New(getenv)
-	if err != nil {
-		return err
-	}
-
 	if len(args) < 2 {
-		return errors.New("Invalid number of args")
+		return errors.New("Usage: hours <command>")
 	}
 
 	cmd := args[1]
 
+	// configure doesn't need a client
+	if cmd == "configure" {
+		return runConfigure(stdout)
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	if host := getenv("HOURS_HOST"); host != "" {
+		cfg.Host = host
+	}
+
+	c, err := client.New(cfg.Host)
+	if err != nil {
+		return err
+	}
+
 	switch cmd {
 	case "login":
-		fmt.Print("Passphrase:")
-		passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
-		if err != nil {
-			return err
+		passphrase := cfg.Passphrase
+		if passphrase == "" {
+			fmt.Fprint(stdout, "Passphrase: ")
+			pb, err := term.ReadPassword(int(os.Stdin.Fd()))
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(stdout)
+			passphrase = string(pb)
 		}
-		fmt.Println()
-		err = client.Login(ctx, string(passphrase))
-		if err != nil {
+		if err := c.Login(ctx, passphrase); err != nil {
 			return err
 		}
 	case "projects":
 		if len(args) < 3 {
 			return errors.New("Usage: hours projects <list|create|delete>")
 		}
-		subCmd := args[2]
-		switch subCmd {
+		switch args[2] {
 		case "list":
-			projects, err := client.ListProjects(ctx)
+			projects, err := c.ListProjects(ctx)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(stdout, "%+v\n", projects)
+			printProjects(stdout, projects)
 		case "create":
 			if len(args) < 4 {
-				return errors.New("Usage hours projects create <name>")
-
+				return errors.New("Usage: hours projects create <name>")
 			}
-			projectName := args[3]
-			err := client.CreateProject(ctx, projectName)
-			if err != nil {
+			if err := c.CreateProject(ctx, args[3]); err != nil {
 				return err
 			}
 		case "delete":
 			if len(args) < 4 {
-				return errors.New("Usage hours projects delete <name>")
+				return errors.New("Usage: hours projects delete <name>")
 			}
-			projectName := args[3]
-			err := client.DeleteProject(ctx, projectName)
-			if err != nil {
+			if err := c.DeleteProject(ctx, args[3]); err != nil {
 				return err
 			}
 		default:
-			return fmt.Errorf("Invalid subcommand: %s", subCmd)
+			return fmt.Errorf("Invalid subcommand: %s", args[2])
 		}
 	default:
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}
 
 	return nil
+}
+
+func runConfigure(stdout io.Writer) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+
+	fmt.Fprint(stdout, "Host URL: ")
+	var host string
+	fmt.Scanln(&host)
+	if host != "" {
+		cfg.Host = host
+	}
+
+	fmt.Fprint(stdout, "Passphrase (leave blank to skip): ")
+	passphrase, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return err
+	}
+	fmt.Fprintln(stdout)
+	if len(passphrase) > 0 {
+		cfg.Passphrase = string(passphrase)
+	}
+
+	if err := config.Save(cfg); err != nil {
+		return err
+	}
+
+	fmt.Fprintln(stdout, "Configuration saved.")
+	return nil
+}
+
+func printProjects(w io.Writer, resp types.ProjectListResponse) {
+	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "ID\tNAME\tCREATED\tLAST MODIFIED")
+	for _, p := range resp.Projects {
+		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
+			p.ID,
+			p.Name,
+			p.CreatedTime.Format("2006-01-02"),
+			p.LastModifiedTime.Format("2006-01-02"),
+		)
+	}
+	tw.Flush()
 }
 
 func main() {
