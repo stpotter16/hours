@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS session (
 
 CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     created_time TEXT NOT NULL,
     last_modified_time TEXT NOT NULL
 ) STRICT;
