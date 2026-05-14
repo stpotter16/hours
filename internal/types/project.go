@@ -7,6 +7,7 @@ type Project struct {
 	Name             string    `json:"name"`
 	CreatedTime      time.Time `json:"created_time"`
 	LastModifiedTime time.Time `json:"last_modified_time"`
+	TotalSeconds     int       `json:"total_seconds"`
 }
 
 type ProjectListResponse struct {

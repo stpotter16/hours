@@ -11,4 +11,8 @@ type Store interface {
 	GetProjects(ctx context.Context) ([]types.Project, error)
 	CreateProject(ctx context.Context, name string) (int, error)
 	DeleteProject(ctx context.Context, name string) error
+
+	// Timers
+	StartTimer(ctx context.Context, projectName string) error
+	StopTimer(ctx context.Context, projectName string) error
 }

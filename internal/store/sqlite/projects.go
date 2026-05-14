@@ -9,7 +9,17 @@ import (
 
 func (s Store) GetProjects(ctx context.Context) ([]types.Project, error) {
 	rows, err := s.db.Query(ctx,
-		`SELECT id, name, created_time, last_modified_time from projects`,
+		`SELECT
+			p.id,
+			p.name,
+			p.created_time,
+			p.last_modified_time,
+			COALESCE(SUM(
+				unixepoch(COALESCE(te.stopped_at, datetime('now'))) - unixepoch(te.started_at)
+			), 0) AS total_seconds
+		FROM projects p
+		LEFT JOIN timer_entries te ON te.project_id = p.id
+		GROUP BY p.id`,
 	)
 	if err != nil {
 		return nil, err
@@ -22,7 +32,7 @@ func (s Store) GetProjects(ctx context.Context) ([]types.Project, error) {
 		var project types.Project
 		var createdTime string
 		var lastModifiedTime string
-		if err := rows.Scan(&project.ID, &project.Name, &createdTime, &lastModifiedTime); err != nil {
+		if err := rows.Scan(&project.ID, &project.Name, &createdTime, &lastModifiedTime, &project.TotalSeconds); err != nil {
 			return nil, err
 		}
 		project.CreatedTime, err = parseTime(createdTime)
