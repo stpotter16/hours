@@ -5,6 +5,9 @@ shell:
 client/build:
 	./dev-scripts/build-client.sh
 
+client/release:
+	./dev-scripts/release-client.sh
+
 
 server/build:
 	./dev-scripts/build-server.sh

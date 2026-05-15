@@ -9,6 +9,7 @@
 *.dylib
 tmp/*
 release/*
+dist/*
 result
 
 # Test binary, built with `go test -c`
