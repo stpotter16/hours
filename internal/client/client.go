@@ -174,18 +174,47 @@ func (c Client) StartTimer(ctx context.Context, projectName string) error {
 	return nil
 }
 
-func (c Client) StopTimer(ctx context.Context, projectName string) error {
-	req, err := c.newAuthRequest(ctx, "DELETE", c.baseUrl.JoinPath(fmt.Sprintf("/projects/%s/timers/active", projectName)).String(), nil)
+func (c Client) StopTimer(ctx context.Context, projectName string, stoppedAt time.Time) error {
+	body, err := json.Marshal(types.StopTimerRequest{StoppedAt: stoppedAt})
 	if err != nil {
 		return err
 	}
+	req, err := c.newAuthRequest(ctx, "DELETE", c.baseUrl.JoinPath(fmt.Sprintf("/projects/%s/timers/active", projectName)).String(), bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("Could not send DELETE /projects/%s/timers/active: %v", projectName, err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("stop timer failed: %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (c Client) AddTimer(ctx context.Context, projectName string, startedAt, stoppedAt time.Time) error {
+	body, err := json.Marshal(types.AddTimerRequest{StartedAt: startedAt, StoppedAt: stoppedAt})
+	if err != nil {
+		return err
+	}
+	req, err := c.newAuthRequest(ctx, "POST", c.baseUrl.JoinPath(fmt.Sprintf("/projects/%s/timers", projectName)).String(), bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not send POST /projects/%s/timers: %v", projectName, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("add timer failed: %s", resp.Status)
 	}
 
 	return nil

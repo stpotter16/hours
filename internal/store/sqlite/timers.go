@@ -33,14 +33,13 @@ func (s Store) StartTimer(ctx context.Context, projectName string) error {
 	return nil
 }
 
-func (s Store) StopTimer(ctx context.Context, projectName string) error {
-	now := formatTime(time.Now().UTC())
+func (s Store) StopTimer(ctx context.Context, projectName string, stoppedAt time.Time) error {
 	result, err := s.db.Exec(ctx,
 		`UPDATE timer_entries
 		 SET stopped_at = ?
 		 WHERE stopped_at IS NULL
 		   AND project_id = (SELECT id FROM projects WHERE name = ?)`,
-		now, projectName,
+		formatTime(stoppedAt.UTC()), projectName,
 	)
 	if err != nil {
 		return err
@@ -53,6 +52,15 @@ func (s Store) StopTimer(ctx context.Context, projectName string) error {
 		return ErrNoActiveTimer
 	}
 	return nil
+}
+
+func (s Store) AddTimer(ctx context.Context, projectName string, startedAt, stoppedAt time.Time) error {
+	_, err := s.db.Exec(ctx,
+		`INSERT INTO timer_entries (project_id, started_at, stopped_at)
+		 SELECT id, ?, ? FROM projects WHERE name = ?`,
+		formatTime(startedAt.UTC()), formatTime(stoppedAt.UTC()), projectName,
+	)
+	return err
 }
 
 func (s Store) GetTimers(ctx context.Context) ([]types.Timer, error) {

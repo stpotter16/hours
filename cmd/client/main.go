@@ -8,7 +8,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/stpotter16/hours/internal/client"
 	"github.com/stpotter16/hours/internal/config"
@@ -115,9 +117,35 @@ func run(
 			}
 		case "stop":
 			if len(args) < 4 {
-				return errors.New("Usage: hours timers stop <project name>")
+				return errors.New("Usage: hours timers stop <project name> [time ago]")
 			}
-			if err := c.StopTimer(ctx, args[3]); err != nil {
+			stoppedAt := time.Now()
+			if len(args) >= 5 {
+				t, err := parseRelativeTime(args[4])
+				if err != nil {
+					return err
+				}
+				stoppedAt = t
+			}
+			if err := c.StopTimer(ctx, args[3], stoppedAt); err != nil {
+				return err
+			}
+		case "add":
+			if len(args) < 6 {
+				return errors.New("Usage: hours timers add <project name> <start> <stop>\n  e.g. hours timers add myproject \"2h ago\" \"30m ago\"")
+			}
+			startedAt, err := parseRelativeTime(args[4])
+			if err != nil {
+				return fmt.Errorf("invalid start time: %w", err)
+			}
+			stoppedAt, err := parseRelativeTime(args[5])
+			if err != nil {
+				return fmt.Errorf("invalid stop time: %w", err)
+			}
+			if stoppedAt.Before(startedAt) {
+				return errors.New("stop time must be after start time")
+			}
+			if err := c.AddTimer(ctx, args[3], startedAt, stoppedAt); err != nil {
 				return err
 			}
 		default:
@@ -174,6 +202,15 @@ func printProjects(w io.Writer, resp types.ProjectListResponse) {
 		)
 	}
 	tw.Flush()
+}
+
+func parseRelativeTime(s string) (time.Time, error) {
+	s = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(s), "ago"))
+	d, err := time.ParseDuration(strings.TrimSpace(s))
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid duration %q — use a format like \"2h30m ago\" or \"45m ago\"", s)
+	}
+	return time.Now().Add(-d), nil
 }
 
 func formatDuration(seconds int) string {

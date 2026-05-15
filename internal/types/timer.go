@@ -11,3 +11,12 @@ type Timer struct {
 type TimerListResponse struct {
 	Timers []Timer `json:"timers"`
 }
+
+type AddTimerRequest struct {
+	StartedAt time.Time `json:"started_at"`
+	StoppedAt time.Time `json:"stopped_at"`
+}
+
+type StopTimerRequest struct {
+	StoppedAt time.Time `json:"stopped_at"`
+}
