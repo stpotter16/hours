@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/stpotter16/hours/internal/types"
 )
 
 var ErrNoActiveTimer = errors.New("no active timer for project")
@@ -52,4 +53,41 @@ func (s Store) StopTimer(ctx context.Context, projectName string) error {
 		return ErrNoActiveTimer
 	}
 	return nil
+}
+
+func (s Store) GetTimers(ctx context.Context) ([]types.Timer, error) {
+	rows, err := s.db.Query(ctx,
+		`SELECT
+			te.id,
+			p.name,
+			te.started_at
+		FROM timer_entries te
+		LEFT JOIN projects p
+		ON te.project_id = p.id
+		WHERE stopped_at is NULL
+		`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var timers []types.Timer
+	for rows.Next() {
+		var timer types.Timer
+		var startedAtTime string
+		if err := rows.Scan(&timer.ID, &timer.ProjectName, &startedAtTime); err != nil {
+			return nil, err
+		}
+		timer.StartedTime, err = parseTime(startedAtTime)
+		if err != nil {
+			return nil, err
+		}
+		timers = append(timers, timer)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return timers, nil
 }

@@ -23,4 +23,7 @@ func addRoutes(
 	mux.Handle("POST /projects", apiAuthRequired(postProjects(store)))
 	mux.Handle("GET /projects", apiAuthRequired(getProjects(store)))
 	mux.Handle("DELETE /projects/{name}", apiAuthRequired(deleteProjects(store)))
+	mux.Handle("POST /projects/{name}/timers", apiAuthRequired(postTimers(store)))
+	mux.Handle("DELETE /projects/{name}/timers/active", apiAuthRequired(deleteTimers(store)))
+	mux.Handle("GET /timers", apiAuthRequired(getTimers(store)))
 }

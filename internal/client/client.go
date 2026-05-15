@@ -135,6 +135,62 @@ func (c Client) DeleteProject(ctx context.Context, name string) error {
 	return nil
 }
 
+func (c Client) ListTimers(ctx context.Context) (types.TimerListResponse, error) {
+	req, err := c.newAuthRequest(ctx, "GET", c.baseUrl.JoinPath("/timers").String(), nil)
+	if err != nil {
+		return types.TimerListResponse{}, err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return types.TimerListResponse{}, fmt.Errorf("Could not send GET /timers: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return types.TimerListResponse{}, fmt.Errorf("get timers failed: %s", resp.Status)
+	}
+
+	var result types.TimerListResponse
+	if err = json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return types.TimerListResponse{}, fmt.Errorf("failed to decode response: %v", err)
+	}
+	return result, nil
+}
+
+func (c Client) StartTimer(ctx context.Context, projectName string) error {
+	req, err := c.newAuthRequest(ctx, "POST", c.baseUrl.JoinPath(fmt.Sprintf("/projects/%s/timers", projectName)).String(), nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not send POST /projects/%s/timers: %v", projectName, err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("start timer failed: %s", resp.Status)
+	}
+
+	return nil
+}
+
+func (c Client) StopTimer(ctx context.Context, projectName string) error {
+	req, err := c.newAuthRequest(ctx, "DELETE", c.baseUrl.JoinPath(fmt.Sprintf("/projects/%s/timers/active", projectName)).String(), nil)
+	if err != nil {
+		return err
+	}
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("Could not send DELETE /projects/%s/timers/active: %v", projectName, err)
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("stop timer failed: %s", resp.Status)
+	}
+
+	return nil
+}
+
 func (c Client) newAuthRequest(ctx context.Context, method, url string, body io.Reader) (*http.Request, error) {
 	session, err := loadSession()
 	if err != nil {

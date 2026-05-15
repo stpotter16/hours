@@ -95,6 +95,34 @@ func run(
 		default:
 			return fmt.Errorf("Invalid subcommand: %s", args[2])
 		}
+	case "timers":
+		if len(args) < 3 {
+			return errors.New("Usage: hours timers <list|start|stop>")
+		}
+		switch args[2] {
+		case "list":
+			timers, err := c.ListTimers(ctx)
+			if err != nil {
+				return err
+			}
+			printTimers(stdout, timers)
+		case "start":
+			if len(args) < 4 {
+				return errors.New("Usage: hours timers start <project name>")
+			}
+			if err := c.StartTimer(ctx, args[3]); err != nil {
+				return err
+			}
+		case "stop":
+			if len(args) < 4 {
+				return errors.New("Usage: hours timers stop <project name>")
+			}
+			if err := c.StopTimer(ctx, args[3]); err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("Invalid subcommand: %s", args[2])
+		}
 	default:
 		return fmt.Errorf("Invalid command: %s", cmd)
 	}
@@ -142,6 +170,19 @@ func printProjects(w io.Writer, resp types.ProjectListResponse) {
 			p.Name,
 			p.CreatedTime.Format("2006-01-02"),
 			p.LastModifiedTime.Format("2006-01-02"),
+		)
+	}
+	tw.Flush()
+}
+
+func printTimers(w io.Writer, resp types.TimerListResponse) {
+	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "ID\tPROJECT NAME\tSTARTED")
+	for _, t := range resp.Timers {
+		fmt.Fprintf(tw, "%d\t%s\t%s\n",
+			t.ID,
+			t.ProjectName,
+			t.StartedTime.Format("2006-01-02"),
 		)
 	}
 	tw.Flush()

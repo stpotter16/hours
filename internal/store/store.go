@@ -15,4 +15,5 @@ type Store interface {
 	// Timers
 	StartTimer(ctx context.Context, projectName string) error
 	StopTimer(ctx context.Context, projectName string) error
+	GetTimers(ctx context.Context) ([]types.Timer, error)
 }

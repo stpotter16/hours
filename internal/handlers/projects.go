@@ -41,6 +41,8 @@ func getProjects(s store.Store) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(types.ProjectListResponse{Projects: projects}); err != nil {
 			log.Printf("projectGet encode: %v", err)
+			http.Error(w, "Server issue - try again later", http.StatusInternalServerError)
+			return
 		}
 	}
 }
