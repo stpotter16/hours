@@ -163,16 +163,30 @@ func runConfigure(stdout io.Writer) error {
 
 func printProjects(w io.Writer, resp types.ProjectListResponse) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(tw, "ID\tNAME\tCREATED\tLAST MODIFIED")
+	fmt.Fprintln(tw, "ID\tNAME\tTIME WORKED\tCREATED\tLAST MODIFIED")
 	for _, p := range resp.Projects {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
+		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n",
 			p.ID,
 			p.Name,
+			formatDuration(p.TotalSeconds),
 			p.CreatedTime.Format("2006-01-02"),
 			p.LastModifiedTime.Format("2006-01-02"),
 		)
 	}
 	tw.Flush()
+}
+
+func formatDuration(seconds int) string {
+	h := seconds / 3600
+	m := (seconds % 3600) / 60
+	s := seconds % 60
+	if h > 0 {
+		return fmt.Sprintf("%dh %02dm %02ds", h, m, s)
+	}
+	if m > 0 {
+		return fmt.Sprintf("%dm %02ds", m, s)
+	}
+	return fmt.Sprintf("%ds", s)
 }
 
 func printTimers(w io.Writer, resp types.TimerListResponse) {

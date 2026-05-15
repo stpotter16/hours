@@ -14,7 +14,6 @@ func postProjects(s store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		createProjectReq, err := parse.ParseProjectCreateRequest(r)
 		if err != nil {
-			log.Printf("projectPost: %v", err)
 			http.Error(w, "Invalid request", http.StatusBadRequest)
 			return
 		}
@@ -41,8 +40,6 @@ func getProjects(s store.Store) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(types.ProjectListResponse{Projects: projects}); err != nil {
 			log.Printf("projectGet encode: %v", err)
-			http.Error(w, "Server issue - try again later", http.StatusInternalServerError)
-			return
 		}
 	}
 }
