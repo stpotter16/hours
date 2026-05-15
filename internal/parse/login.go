@@ -9,19 +9,12 @@ import (
 )
 
 func ParseLoginPost(r *http.Request) (types.LoginRequest, error) {
-	body := struct {
-		Passphrase string `json:"passphrase"`
-	}{}
-
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+	var req types.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return types.LoginRequest{}, err
 	}
-
-	if body.Passphrase == "" {
+	if req.Passphrase == "" {
 		return types.LoginRequest{}, errors.New("passphrase is required")
 	}
-
-	return types.LoginRequest{
-		Passphrase: body.Passphrase,
-	}, nil
+	return req, nil
 }

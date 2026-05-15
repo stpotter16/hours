@@ -8,12 +8,12 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"text/tabwriter"
 	"time"
 
 	"github.com/stpotter16/hours/internal/client"
 	"github.com/stpotter16/hours/internal/config"
+	"github.com/stpotter16/hours/internal/timeutil"
 	"github.com/stpotter16/hours/internal/types"
 	"golang.org/x/term"
 )
@@ -121,7 +121,7 @@ func run(
 			}
 			stoppedAt := time.Now()
 			if len(args) >= 5 {
-				t, err := parseRelativeTime(args[4])
+				t, err := timeutil.ParseRelativeTime(args[4])
 				if err != nil {
 					return err
 				}
@@ -134,11 +134,11 @@ func run(
 			if len(args) < 6 {
 				return errors.New("Usage: hours timers add <project name> <start> <stop>\n  e.g. hours timers add myproject \"2h ago\" \"30m ago\"")
 			}
-			startedAt, err := parseRelativeTime(args[4])
+			startedAt, err := timeutil.ParseRelativeTime(args[4])
 			if err != nil {
 				return fmt.Errorf("invalid start time: %w", err)
 			}
-			stoppedAt, err := parseRelativeTime(args[5])
+			stoppedAt, err := timeutil.ParseRelativeTime(args[5])
 			if err != nil {
 				return fmt.Errorf("invalid stop time: %w", err)
 			}
@@ -196,7 +196,7 @@ func printProjects(w io.Writer, resp types.ProjectListResponse) {
 		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\t%s\n",
 			p.ID,
 			p.Name,
-			formatDuration(p.TotalSeconds),
+			timeutil.FormatDuration(p.TotalSeconds),
 			p.CreatedTime.Format("2006-01-02"),
 			p.LastModifiedTime.Format("2006-01-02"),
 		)
@@ -204,27 +204,6 @@ func printProjects(w io.Writer, resp types.ProjectListResponse) {
 	tw.Flush()
 }
 
-func parseRelativeTime(s string) (time.Time, error) {
-	s = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(s), "ago"))
-	d, err := time.ParseDuration(strings.TrimSpace(s))
-	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid duration %q — use a format like \"2h30m ago\" or \"45m ago\"", s)
-	}
-	return time.Now().Add(-d), nil
-}
-
-func formatDuration(seconds int) string {
-	h := seconds / 3600
-	m := (seconds % 3600) / 60
-	s := seconds % 60
-	if h > 0 {
-		return fmt.Sprintf("%dh %02dm %02ds", h, m, s)
-	}
-	if m > 0 {
-		return fmt.Sprintf("%dm %02ds", m, s)
-	}
-	return fmt.Sprintf("%ds", s)
-}
 
 func printTimers(w io.Writer, resp types.TimerListResponse) {
 	tw := tabwriter.NewWriter(w, 0, 0, 3, ' ', 0)

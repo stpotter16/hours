@@ -17,18 +17,24 @@ func postTimers(s store.Store) http.HandlerFunc {
 		projectName := r.PathValue("name")
 
 		var req types.AddTimerRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil && !req.StartedAt.IsZero() && !req.StoppedAt.IsZero() {
-			if req.StoppedAt.Before(req.StartedAt) {
-				http.Error(w, "stopped_at must be after started_at", http.StatusBadRequest)
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+			if !req.StartedAt.IsZero() || !req.StoppedAt.IsZero() {
+				if req.StartedAt.IsZero() || req.StoppedAt.IsZero() {
+					http.Error(w, "both started_at and stopped_at are required", http.StatusBadRequest)
+					return
+				}
+				if req.StoppedAt.Before(req.StartedAt) {
+					http.Error(w, "stopped_at must be after started_at", http.StatusBadRequest)
+					return
+				}
+				if err := s.AddTimer(r.Context(), projectName, req.StartedAt, req.StoppedAt); err != nil {
+					log.Printf("timerPost add: %v", err)
+					http.Error(w, "Server issue - try again later", http.StatusInternalServerError)
+					return
+				}
+				w.WriteHeader(http.StatusCreated)
 				return
 			}
-			if err := s.AddTimer(r.Context(), projectName, req.StartedAt, req.StoppedAt); err != nil {
-				log.Printf("timerPost add: %v", err)
-				http.Error(w, "Server issue - try again later", http.StatusInternalServerError)
-				return
-			}
-			w.WriteHeader(http.StatusCreated)
-			return
 		}
 
 		if err := s.StartTimer(r.Context(), projectName); err != nil {

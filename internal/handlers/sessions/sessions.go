@@ -2,10 +2,7 @@ package sessions
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -21,9 +18,8 @@ const SESSION_KEY = "session"
 const SESSION_ENV_KEY = "HOURS_SESSION_ENV_KEY"
 
 type Session struct {
-	ID        string
-	UserId    int
-	CsrfToken string
+	ID     string
+	UserId int
 }
 
 type SessionManger struct {
@@ -48,20 +44,12 @@ func New(db db.DB, getenv func(string) string) (SessionManger, error) {
 }
 
 func (s SessionManger) CreateSession(w http.ResponseWriter, r *http.Request, userId int) error {
-	sessionId := uuid.NewString()
-	csrfToken, err := generateCsrfToken()
-	if err != nil {
-		log.Printf("Failed to generate session csrf token: %v", err)
-		return err
-	}
 	session := Session{
-		ID:        sessionId,
-		UserId:    userId,
-		CsrfToken: csrfToken,
+		ID:     uuid.NewString(),
+		UserId: userId,
 	}
 
 	if err := s.writeSessionCookie(w, session); err != nil {
-		log.Printf("Failed to set session cookie: %v", err)
 		return err
 	}
 
@@ -70,11 +58,7 @@ func (s SessionManger) CreateSession(w http.ResponseWriter, r *http.Request, use
 		return err
 	}
 
-	if err := s.insertSession(r.Context(), session.ID, serializedSession); err != nil {
-		log.Printf("Failed to save session %v: %v", session, err)
-		return err
-	}
-	return nil
+	return s.insertSession(r.Context(), session.ID, serializedSession)
 }
 
 func (s SessionManger) DeleteSession(w http.ResponseWriter, r *http.Request) error {
@@ -83,21 +67,14 @@ func (s SessionManger) DeleteSession(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 	if err = s.deleteSession(r.Context(), session.ID); err != nil {
-		log.Printf("Could not delete session %v: %v", session, err)
 		return err
 	}
-	if err = s.deleteSessionCookie(w); err != nil {
-		log.Printf("Could not delete session cookie: %v", err)
-		return err
-	}
-	return nil
+	return s.deleteSessionCookie(w)
 }
 
 func (s SessionManger) PopulateSessionContext(r *http.Request) (context.Context, error) {
 	session, err := s.loadSession(r)
-
 	if err != nil {
-		log.Printf("Unable to populate session context: %v", err)
 		return nil, err
 	}
 
@@ -109,7 +86,6 @@ func (s SessionManger) SessionFromContext(ctx context.Context) (Session, error) 
 	ctxKey := contextKey{SESSION_KEY}
 	session, okay := ctx.Value(ctxKey).(Session)
 	if !okay {
-		log.Printf("Unable to extract session from context")
 		return Session{}, errors.New("no session info in context")
 	}
 	return session, nil
@@ -118,20 +94,17 @@ func (s SessionManger) SessionFromContext(ctx context.Context) (Session, error) 
 func (s SessionManger) loadSession(r *http.Request) (Session, error) {
 	cookie, err := s.readSessionCookie(r)
 	if err != nil {
-		log.Printf("Failed to read session cookie: %v", err)
 		return Session{}, err
 	}
 
 	cookieVals := strings.SplitN(cookie, "::", 2)
 	if len(cookieVals) != 2 {
-		log.Printf("Invalid cookie value: %s", cookie)
 		return Session{}, errors.New("cookie is invalid")
 	}
 	cookieToken := cookieVals[1]
 
 	serializedSession, err := s.readSession(r.Context(), cookieToken)
 	if err != nil {
-		log.Printf("Failed to load session data for session %s: %v", cookieToken, err)
 		return Session{}, err
 	}
 
@@ -147,12 +120,3 @@ func (s SessionManger) loadSession(r *http.Request) (Session, error) {
 	return session, nil
 }
 
-func generateCsrfToken() (string, error) {
-	randomReader := rand.Reader
-	byteSlice := make([]byte, 16)
-	if _, err := randomReader.Read(byteSlice); err != nil {
-		return "", err
-	}
-	token := base64.URLEncoding.EncodeToString(byteSlice)
-	return token, nil
-}

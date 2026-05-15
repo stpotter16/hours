@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -24,23 +23,19 @@ func New(directory string) (DB, error) {
 	dbPath := filepath.Join(directory, "hours.sqlite")
 	readDB, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Printf("Could not open read db: %v", err)
 		return DB{}, err
 	}
 	readDB.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	if err = applyPragmas(readDB); err != nil {
-		log.Printf("Could not apply PRAGMAs to read db: %v", err)
 		return DB{}, err
 	}
 
 	writeDB, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		log.Printf("Could not open write db: %v", err)
 		return DB{}, err
 	}
 	writeDB.SetMaxOpenConns(1)
 	if err = applyPragmas(writeDB); err != nil {
-		log.Printf("Could not apply PRAGMAs to write db: %v", err)
 		return DB{}, err
 	}
 
@@ -53,12 +48,7 @@ func New(directory string) (DB, error) {
 }
 
 func (db *DB) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	rows, err := db.readDB.QueryContext(ctx, query, args...)
-	if err != nil {
-		log.Printf("Could not execute query: %v", err)
-		return nil, err
-	}
-	return rows, nil
+	return db.readDB.QueryContext(ctx, query, args...)
 }
 
 func (db *DB) QueryRow(ctx context.Context, query string, args ...any) *sql.Row {
@@ -66,12 +56,7 @@ func (db *DB) QueryRow(ctx context.Context, query string, args ...any) *sql.Row 
 }
 
 func (db *DB) Exec(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	result, err := db.writeDB.ExecContext(ctx, query, args...)
-	if err != nil {
-		log.Printf("Could not execute statement: %v", err)
-		return nil, err
-	}
-	return result, nil
+	return db.writeDB.ExecContext(ctx, query, args...)
 }
 
 func (db *DB) WithTx(ctx context.Context, fn func(*sql.Tx) error) error {
