@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
 	"github.com/stpotter16/hours/internal/parse"
 	"github.com/stpotter16/hours/internal/store"
+	"github.com/stpotter16/hours/internal/store/sqlite"
 	"github.com/stpotter16/hours/internal/types"
 )
 
@@ -48,6 +50,10 @@ func deleteProjects(s store.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		projectName := r.PathValue("name")
 		if err := s.DeleteProject(r.Context(), projectName); err != nil {
+			if errors.Is(err, sqlite.ErrProjectHasTimers) {
+				http.Error(w, "Cannot delete project with recorded time entries", http.StatusConflict)
+				return
+			}
 			log.Printf("projectDelete: %v", err)
 			http.Error(w, "Server issue - try again later", http.StatusInternalServerError)
 			return

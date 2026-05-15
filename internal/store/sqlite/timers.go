@@ -2,20 +2,10 @@ package sqlite
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	"github.com/mattn/go-sqlite3"
 	"github.com/stpotter16/hours/internal/types"
 )
-
-var ErrNoActiveTimer = errors.New("no active timer for project")
-var ErrTimerAlreadyRunning = errors.New("timer already running for project")
-
-func isUniqueConstraintError(err error) bool {
-	var sqliteErr sqlite3.Error
-	return errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique
-}
 
 func (s Store) StartTimer(ctx context.Context, projectName string) error {
 	now := formatTime(time.Now().UTC())

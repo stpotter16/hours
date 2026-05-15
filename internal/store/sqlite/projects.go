@@ -79,6 +79,11 @@ func (s Store) DeleteProject(ctx context.Context, name string) error {
 		`,
 		name,
 	)
-
-	return err
+	if err != nil {
+		if isForeignKeyConstraintError(err) {
+			return ErrProjectHasTimers
+		}
+		return err
+	}
+	return nil
 }
